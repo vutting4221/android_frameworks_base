@@ -258,7 +258,10 @@ class QuickSettings {
                 mUserInfoTask = null;
             }
         };
-        mUserInfoTask.execute();
+        if (mContext.getResources().getBoolean(R.bool.quick_settings_show_user)
+                || DEBUG_GONE_TILES) {
+            mUserInfoTask.execute();
+        }
     }
 
     private void setupQuickSettings() {
@@ -300,51 +303,54 @@ class QuickSettings {
     }
 
     private void addUserTiles(ViewGroup parent, LayoutInflater inflater) {
-        QuickSettingsTileView userTile = (QuickSettingsTileView)
-                inflater.inflate(R.layout.quick_settings_tile, parent, false);
-        userTile.setContent(R.layout.quick_settings_tile_user, inflater);
-        userTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                collapsePanels();
-                final UserManager um = UserManager.get(mContext);
-                if (um.getUsers(true).size() > 1) {
-                    // Since keyguard and systemui were merged into the same process to save
-                    // memory, they share the same Looper and graphics context.  As a result,
-                    // there's no way to allow concurrent animation while keyguard inflates.
-                    // The workaround is to add a slight delay to allow the animation to finish.
-                    mHandler.postDelayed(new Runnable() {
-                        public void run() {
-                            try {
-                                WindowManagerGlobal.getWindowManagerService().lockNow(null);
-                            } catch (RemoteException e) {
-                                Log.e(TAG, "Couldn't show user switcher", e);
+        if (mContext.getResources().getBoolean(R.bool.quick_settings_show_user)
+                || DEBUG_GONE_TILES) {
+            QuickSettingsTileView userTile = (QuickSettingsTileView)
+                    inflater.inflate(R.layout.quick_settings_tile, parent, false);
+            userTile.setContent(R.layout.quick_settings_tile_user, inflater);
+            userTile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    collapsePanels();
+                    final UserManager um = UserManager.get(mContext);
+                    if (um.getUsers(true).size() > 1) {
+                        // Since keyguard and systemui were merged into the same process to save
+                        // memory, they share the same Looper and graphics context.  As a result,
+                        // there's no way to allow concurrent animation while keyguard inflates.
+                        // The workaround is to add a slight delay to allow the animation to finish.
+                        mHandler.postDelayed(new Runnable() {
+                            public void run() {
+                                try {
+                                    WindowManagerGlobal.getWindowManagerService().lockNow(null);
+                                } catch (RemoteException e) {
+                                    Log.e(TAG, "Couldn't show user switcher", e);
+                                }
                             }
-                        }
-                    }, 400); // TODO: ideally this would be tied to the collapse of the panel
-                } else {
-                    Intent intent = ContactsContract.QuickContact.composeQuickContactsIntent(
-                            mContext, v, ContactsContract.Profile.CONTENT_URI,
-                            ContactsContract.QuickContact.MODE_LARGE, null);
-                    mContext.startActivityAsUser(intent, new UserHandle(UserHandle.USER_CURRENT));
+                        }, 400); // TODO: ideally this would be tied to the collapse of the panel
+                    } else {
+                        Intent intent = ContactsContract.QuickContact.composeQuickContactsIntent(
+                                mContext, v, ContactsContract.Profile.CONTENT_URI,
+                                ContactsContract.QuickContact.MODE_LARGE, null);
+                        mContext.startActivityAsUser(intent, new UserHandle(UserHandle.USER_CURRENT));
+                    }
                 }
-            }
-        });
-        mModel.addUserTile(userTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView view, State state) {
-                UserState us = (UserState) state;
-                ImageView iv = (ImageView) view.findViewById(R.id.user_imageview);
-                TextView tv = (TextView) view.findViewById(R.id.user_textview);
-                tv.setText(state.label);
-                iv.setImageDrawable(us.avatar);
-                view.setContentDescription(mContext.getString(
-                        R.string.accessibility_quick_settings_user, state.label));
-            }
-        });
-        parent.addView(userTile);
-        mDynamicSpannedTiles.add(userTile);
-
+            });
+            mModel.addUserTile(userTile, new QuickSettingsModel.RefreshCallback() {
+                @Override
+                public void refreshView(QuickSettingsTileView view, State state) {
+                    UserState us = (UserState) state;
+                    ImageView iv = (ImageView) view.findViewById(R.id.user_imageview);
+                    TextView tv = (TextView) view.findViewById(R.id.user_textview);
+                    tv.setText(state.label);
+                    iv.setImageDrawable(us.avatar);
+                    view.setContentDescription(mContext.getString(
+                            R.string.accessibility_quick_settings_user, state.label));
+                }
+            });
+            parent.addView(userTile);
+            mDynamicSpannedTiles.add(userTile);
+        }
+        
         // Brightness
         final QuickSettingsBasicTile brightnessTile
                 = new QuickSettingsBasicTile(mContext);
