@@ -368,6 +368,9 @@
     <!-- label for item that generates a bug report in the phone options dialog -->
     <string name="global_action_bug_report">Bug report</string>
 
+    <!-- Label for item that reboots the device in phone options dialog -->
+    <string name="global_action_reboot">Reboot</string>
+
     <!-- Take bug report menu title [CHAR LIMIT=NONE] -->
     <string name="bugreport_title">Take bug report</string>
     <!-- Message in bugreport dialog describing what it does [CHAR LIMIT=NONE] -->
